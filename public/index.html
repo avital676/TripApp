@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    <!-- script -->
+    <script src="script.js"></script>
+    <script type="text/javascript" src="ConfigClient.js"></script>
+    <!-- map -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/css/ol.css" type="text/css">
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/build/ol.js"></script>
+    <meta charset="utf-8">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container-fluid {
+        height: 100%;
+      }
+
+      .row {
+        height: 100%;
+      }
+
+      .col {
+        height: 100%
+      }
+
+      .jumbotron {
+        width: 100%;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        padding-right: 20px;
+        padding-left: 20px;
+        height: 100%;
+        min-height: 570px;
+        background-color: #7ac0d4;
+      }
+
+      .alert {
+        width: auto;
+        text-align: center;
+        display: none;
+      }
+
+      .card {
+        background-color: #fdfdfa;
+      }
+
+      .card-body {
+        color: #326773;
+      }
+
+      .map {
+        height: 100%;
+        width: 100%;
+        min-height: 570px;
+      }
+
+      /* ol map popup style */
+      .ol-popup {
+        font-size: 12px;
+        position: absolute;
+        background-color: #fdfdfa;
+        -webkit-filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+        filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid #7ac0d4;
+        bottom: 12px;
+        left: -50px;
+        min-width: 130px;
+      }
+      .ol-popup:after,
+      .ol-popup:before {
+        top: 100%;
+        border: solid transparent;
+        content: " ";
+        height: 0;
+        width: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+      .ol-popup:after {
+        border-top-color: white;
+        border-width: 10px;
+        left: 48px;
+        margin-left: -10px;
+      }
+      .ol-popup:before {
+        border-top-color: #cccccc;
+        border-width: 11px;
+        left: 48px;
+        margin-left: -11px;
+      }
+      .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+      }
+
+      .marker {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        background: url("//openlayers.org/en/v3.5.0/examples/data/icon.png") no-repeat 0 0;
+      }
+
+      /* loading style */
+      #loading {
+        width: 100%;
+        height: 100%;
+        top: 50%;
+        left: 50%;
+        position: fixed;
+        display: none;
+        opacity: 1;
+        background: rgba(0, 0, 0, 0);
+        z-index: 10;
+        text-align: center;
+      }
+      #loading-image {
+        position: center;
+        top: 0%;
+        left: 0%;
+        z-index: 20;
+      }
+
+      /* result table style */
+      .table-fixed tbody {
+        max-height: 165px;
+        overflow-y: auto;
+        /*width: 100%;*/
+      }
+      /*.table-fixed tbody,
+      .table-fixed tr {
+        display: block;
+        width: 100%;
+      }
+      .table-fixed tbody td,
+      .table-fixed tr {
+        position: static;
+        width: 100%;
+        &::after {
+          content: '';
+          clear: both;
+          display: block;
+        }
+      }*/
+      .table-fixed th {
+        color: #326773;
+      }
+      
+    </style>
+    <title>Plan your trip!</title>
+  </head>
+  <body>
+    <div class="alert alert-info" role="alert" id="alertu">
+      <strong id="msg"></strong>
+    </div>
+    <!-- loading div -->
+    <div id= "loading">
+      <img id="loadingImage" src="resources/loading.gif" alt="Loading..." />
+    </div>
+    <!-- end of loading div -->
+    <div class="container-fluid">
+    <div class="row no-gutters">
+      <div class="col-5">
+        <div class="jumbotron">
+		  	<h1 class="display-4 text-center" style="color:#fbfbf0;">Plan your trip</h1>
+		  	<p class="lead text-center" id="explain" style="color:#fbfbf0;">Enter your destination, choose categories and radius and get custom suggestions for your trip!</p>
+		  	<!-- <hr class="my-4"> -->
+			  <div class="card card-body" id="card">
+          <form id="form">
+            <div class="form-row">
+              <div class="col-4">
+                <select class="form-control" id="country-selection">
+                  <option value="0" selected>Country</option>
+                </select>
+              </div>
+              <div class="col">
+    			  	  <input type="text" class="form-control" placeholder="Destination" aria-label="trip destination" aria-describedby="basic-addon1" id="destPoint">
+              </div>
+            </div>
+  				  <div class="form-group text-center">
+  				    <label for="formControlRange" class="my-2" style="font-size:15px;">How far are you willing to move away from your destination?</label>
+  				    <input type="range" class="range-field my-2 w-50" id="radiusSlider" min="0" max="60">
+  				    <span class="font-weight-bold text-primary ml-2 mt-1 valueSpan"></span>
+  				  </div>
+            <div class="form-group">
+              <label for="category">Filter by category (hold ctrl for several options)</label>
+              <select multiple class="form-control" id="category" size="3"></select>
+              <div id="categories" class="row justify-content-center"></div>
+            </div>
+            <div class="form-group form-inline">
+              <label for="rating">Filter by average rating</labal>
+              <select class="form-control" id="rating-filter">
+                <option value = 0>any</option>
+                <option value = 1>☆</option>
+                <option value = 2>☆☆</option>
+                <option value = 3>☆☆☆</option>
+                <option value = 4>☆☆☆☆</option>
+                <option value = 5>☆☆☆☆☆</option>
+              </select>
+            </div>
+				  </form>
+          <button type="button" class="btn btn-info" style="width:100%;">Let's Go!</button>
+			  </div>
+        <div class="card card-body" id="resultPlaces" style="display: none;">
+          <h5 class="card-title text-center">Check up those places!</h5>
+          <p>Nearby your destination & selected especially for you</p>
+          <!-- Table for results locations-->
+          <table class="table table-sm table-fixed">
+              <col style="width:40%;">
+              <col style="width:30%;">
+              <col style="width:30%;">
+              <thead style="font-size:14px;">
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Average Rating</th>
+                  <th scope="col">Distance</th>
+                </tr>
+              </thead>
+            </table>
+          <div class="table-responsive" style="max-height: 165px">
+            <table class="table table-sm table-hover table-fixed" id="locationsTable">
+              <col style="width:42%;">
+              <col style="width:31%;">
+              <col style="width:27%;">
+              <!-- <thead style="font-size:14px;">
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Average Rating</th>
+                  <th scope="col">Distance</th>
+                </tr>
+              </thead> -->
+              <tbody style="font-size:12px;"></tbody>
+            </table>
+          </div>
+          <h5 class="card-title text-center">Places you want to visit</h5>
+          <p>Click ✔ in the popup window of a place you want to visit.</p>
+          <!-- Table for chosen locations-->
+          <div class="table-responsive" style="max-height: 95px;">
+            <table class="table table-sm table-hover" id="chosenTable">
+              <tbody style="font-size:12px"></tbody>
+            </table>
+          </div>
+        <div id="chosen"></div>
+          <button type="button" class="btn btn-info" id="new-search" style="width:100%;">New Search</button>
+        </div>
+			  </div>
+		  </div>
+      <div class="col">
+        <div id="map" class="map"></div>
+        <div id="popup" class="ol-popup" style="text-align:center;">
+          <a href="#" id="popup-closer" class="ol-popup-closer">❌</a>
+          <div id="popup-title" style="color:#326773;"></div>
+          <div id="popup-content" style="color:#326773;"></div>
+          <a href="#" id="popup-add-desc" class="ol-popup-button" data-toggle="modal" data-target="#addDescModal">Add review</a>
+          <br>
+          <a href="#" id="popup-show-desc" class="ol-popup-button" data-toggle="modal" data-target="#showDescModal">Show reviews</a>
+          <br>
+          <a href="#" id="popup-check" class="ol-popup-button">✔</a>
+        </div>
+      </div>
+    </div>
+    </div>
+    <div class="modal fade" id="addDescModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Add description</h5>
+          </div>
+        <div class="modal-body">
+          <div class="form-group form-inline">
+            <input type="text" class="form-control" aria-label="description" aria-describedby="basic-addon1" id="user-description" maxlength="55" size="40">
+            <select class="custom-select" id="user-rate">
+              <option value="0" selected>Rate...</option>
+              <option value="1">☆</option>
+              <option value="2">☆☆</option>
+              <option value="3">☆☆☆</option>
+              <option value="4">☆☆☆☆</option>
+              <option value="5">☆☆☆☆☆</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="Cancle" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" id="save-desc" class="btn btn-primary">Save</button>
+        </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="showDescModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel2" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Reviews & Ratings</h5>
+          </div>
+          <div class="modal-body">
+            <!-- display descriptions -->
+            <table class="table" id="review-table">
+              <thead>
+                <tr>
+                  <th scope="col">Review</th>
+                  <th scope="col">Rating</th>
+                  <th scope="col">Date</th>
+              </thead>
+              <tbody id="review-table-body"></tbody>
+            </table>
+          </div> 
+        <div class="modal-footer">
+          <button type="button" id="close" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery and Bootstrap Bundle (includes Popper) -->
+    <script
+    src="https://code.jquery.com/jquery-3.5.1.js"
+    integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
+    crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+
+
+
+  </body>
+</html>
